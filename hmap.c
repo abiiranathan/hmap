@@ -170,3 +170,99 @@ void hm_clear(HMap* hmap) {
 size_t hm_size(HMap* hmap) {
     return hmap->newer.size + hmap->older.size;
 }
+
+// Helper function to find next power of two
+static inline size_t next_power_of_two(size_t n) {
+    if (n == 0)
+        return 1;
+    n--;
+
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32;
+    return n + 1;
+}
+
+// Optimized resize that leverages existing progressive rehashing
+void hm_resize(HMap* hmap, size_t new_capacity) {
+    assert(new_capacity > 0 && ((new_capacity - 1) & new_capacity) == 0);
+
+    // Calculate total current size
+    size_t current_size = hmap->newer.size + hmap->older.size;
+
+    // Don't resize smaller than current elements
+    if (new_capacity < current_size) {
+        new_capacity = next_power_of_two(current_size);
+    }
+
+    // If already at correct capacity, do nothing
+    if (hmap->newer.tab && (hmap->newer.mask + 1) == new_capacity && !hmap->older.tab) {
+        return;
+    }
+
+    // If currently rehashing, finish it first
+    while (hmap->older.size > 0) {
+        hm_help_rehashing(hmap);
+    }
+
+    // Now we have only newer table with all elements
+    // Check if we need to resize
+    if ((hmap->newer.mask + 1) == new_capacity) {
+        return;  // Already correct size
+    }
+
+    // Trigger progressive rehashing to new size
+    hmap->older = hmap->newer;            // Current becomes older
+    hm_init(&hmap->newer, new_capacity);  // Create new table
+    hmap->migrate_pos = 0;                // Start migration
+
+    // Do some initial migration work (optional - keeps it non-blocking)
+    hm_help_rehashing(hmap);
+}
+
+// If you want immediate resize (blocking but simpler)
+void hm_resize_immediate(HMap* hmap, size_t new_capacity) {
+    assert(new_capacity > 0 && ((new_capacity - 1) & new_capacity) == 0);
+
+    size_t current_size = hmap->newer.size + hmap->older.size;
+
+    if (new_capacity < current_size) {
+        new_capacity = next_power_of_two(current_size);
+    }
+
+    if (hmap->newer.tab && (hmap->newer.mask + 1) == new_capacity && !hmap->older.tab) {
+        return;
+    }
+
+    // Force complete any ongoing rehashing first
+    while (hmap->older.size > 0) {
+        hm_help_rehashing(hmap);
+    }
+
+    // If already correct size after completing rehashing
+    if ((hmap->newer.mask + 1) == new_capacity) {
+        return;
+    }
+
+    // Do immediate full migration (your current approach)
+    HTab new_tab;
+    hm_init(&new_tab, new_capacity);
+
+    // Migrate all nodes from newer table
+    for (size_t i = 0; i <= hmap->newer.mask; i++) {
+        HNode* node = hmap->newer.tab[i];
+        while (node) {
+            HNode* next = node->next;
+            h_insert(&new_tab, node);
+            node = next;
+        }
+    }
+
+    free(hmap->newer.tab);
+    hmap->newer       = new_tab;
+    hmap->older       = (HTab){};
+    hmap->migrate_pos = 0;
+}

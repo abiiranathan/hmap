@@ -69,6 +69,14 @@ void hm_clear(HMap* hmap);
 // Returns the number of elements in the hash map.
 size_t hm_size(HMap* hmap);
 
+// Blocking hash map resizing.
+// new_capacity must be a power of 2.
+void hm_resize_immediate(HMap* hmap, size_t new_capacity);
+
+// Non-blocking resize that leverages existing progressive rehashing
+// new_capacity must be a power of 2.
+void hm_resize(HMap* hmap, size_t new_capacity);
+
 // ForEach macro
 // node is the loop variable of type HNode*
 // hmap_ptr is the pointer to HMap.
