@@ -1,0 +1,1 @@
+# Tests Linking with installed cmake.

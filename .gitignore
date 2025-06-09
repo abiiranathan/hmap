@@ -1,3 +1,6 @@
 a.out
 main
 hmap_test
+cmake/
+Testing/
+.cache
