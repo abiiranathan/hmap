@@ -33,6 +33,31 @@ SOFTWARE.
 // This is expected to be used with HNode pointers.
 #define container_of(ptr, type, member) ((type*)((char*)(ptr) - offsetof(type, member)))
 
+#define NEXT_POWER_OF_TWO(n)                                                                                 \
+    ((n) == 0 ? 1                                                                                            \
+              : (((size_t)(n) - 1) | (((size_t)(n) - 1) >> 1) | (((size_t)(n) - 1) >> 2) |                   \
+                 (((size_t)(n) - 1) >> 4) | (((size_t)(n) - 1) >> 8) | (((size_t)(n) - 1) >> 16) |           \
+                 (((size_t)(n) - 1) >> 32)) +                                                                \
+                    1)
+
+// // Helper function to find next power of two from n.
+// static inline size_t next_power_of_two(size_t n) {
+//     if (n == 0)
+//         return 1;
+
+//     // clever trick, such that if n is a power of 2,
+//     // it is not pushed to the next power.
+//     n--;
+
+//     n |= n >> 1;
+//     n |= n >> 2;
+//     n |= n >> 4;
+//     n |= n >> 8;
+//     n |= n >> 16;
+//     n |= n >> 32;
+//     return n + 1;
+// }
+
 // Hash table node that should be embedded into payload structures
 // Uses intrusive linking to avoid separate allocations
 typedef struct HNode {
@@ -69,13 +94,13 @@ void hm_clear(HMap* hmap);
 // Returns the number of elements in the hash map.
 size_t hm_size(HMap* hmap);
 
-// Blocking hash map resizing.
-// new_capacity must be a power of 2.
-void hm_resize_immediate(HMap* hmap, size_t new_capacity);
-
 // Non-blocking resize that leverages existing progressive rehashing
 // new_capacity must be a power of 2.
 void hm_resize(HMap* hmap, size_t new_capacity);
+
+// Initialize map with this given capacity(must be power of two)
+// Must be called after initialization of map (before inserting any items.)
+void hm_reserve(HMap* hmap, size_t capacity);
 
 // ForEach macro
 // node is the loop variable of type HNode*

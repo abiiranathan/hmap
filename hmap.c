@@ -27,9 +27,14 @@ SOFTWARE.
 
 #include "hmap.h"
 
-// Initialize a hash table with given size, n (must be power of 2)
+// Initialize a hash table with given size, n (should be power of 2)
 static void hm_init(HTab* htab, size_t n) {
-    assert(n > 0 && ((n - 1) & n) == 0);              // Verify power of 2
+
+    // If n is not a power of 2, round up to next power of 2.
+    if (n > 0 && ((n - 1) & n) != 0) {
+        n = NEXT_POWER_OF_TWO(n);  // Verify power of 2
+    }
+
     htab->tab  = (HNode**)calloc(n, sizeof(HNode*));  // Allocate slot array
     htab->mask = n - 1;                               // Size mask (for fast modulo)
     htab->size = 0;                                   // Empty table
@@ -171,21 +176,6 @@ size_t hm_size(HMap* hmap) {
     return hmap->newer.size + hmap->older.size;
 }
 
-// Helper function to find next power of two
-static inline size_t next_power_of_two(size_t n) {
-    if (n == 0)
-        return 1;
-    n--;
-
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    n |= n >> 32;
-    return n + 1;
-}
-
 // Optimized resize that leverages existing progressive rehashing
 void hm_resize(HMap* hmap, size_t new_capacity) {
     assert(new_capacity > 0 && ((new_capacity - 1) & new_capacity) == 0);
@@ -195,7 +185,7 @@ void hm_resize(HMap* hmap, size_t new_capacity) {
 
     // Don't resize smaller than current elements
     if (new_capacity < current_size) {
-        new_capacity = next_power_of_two(current_size);
+        new_capacity = NEXT_POWER_OF_TWO(current_size);
     }
 
     // If already at correct capacity, do nothing
@@ -223,46 +213,14 @@ void hm_resize(HMap* hmap, size_t new_capacity) {
     hm_help_rehashing(hmap);
 }
 
-// If you want immediate resize (blocking but simpler)
-void hm_resize_immediate(HMap* hmap, size_t new_capacity) {
-    assert(new_capacity > 0 && ((new_capacity - 1) & new_capacity) == 0);
-
-    size_t current_size = hmap->newer.size + hmap->older.size;
-
-    if (new_capacity < current_size) {
-        new_capacity = next_power_of_two(current_size);
+// Initialize map with this given capacity. It the capacity is
+// not a power of 2, the next power of 2 is used. e.g If capacity is 100
+// 128 will be used. You can use the helper NEXT_POWER_OF_TWO macro.
+//
+// Must be called after initialization of map (before inserting any items.)
+void hm_reserve(HMap* hmap, size_t capacity) {
+    if (!hmap->newer.tab) {
+        // power of 2 checked by the init function.
+        hm_init(&hmap->newer, capacity);
     }
-
-    if (hmap->newer.tab && (hmap->newer.mask + 1) == new_capacity && !hmap->older.tab) {
-        return;
-    }
-
-    // Force complete any ongoing rehashing first
-    while (hmap->older.size > 0) {
-        hm_help_rehashing(hmap);
-    }
-
-    // If already correct size after completing rehashing
-    if ((hmap->newer.mask + 1) == new_capacity) {
-        return;
-    }
-
-    // Do immediate full migration (your current approach)
-    HTab new_tab;
-    hm_init(&new_tab, new_capacity);
-
-    // Migrate all nodes from newer table
-    for (size_t i = 0; i <= hmap->newer.mask; i++) {
-        HNode* node = hmap->newer.tab[i];
-        while (node) {
-            HNode* next = node->next;
-            h_insert(&new_tab, node);
-            node = next;
-        }
-    }
-
-    free(hmap->newer.tab);
-    hmap->newer       = new_tab;
-    hmap->older       = (HTab){};
-    hmap->migrate_pos = 0;
 }

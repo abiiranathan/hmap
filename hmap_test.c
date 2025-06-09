@@ -374,50 +374,6 @@ void test_resize_then_operations() {
     puts("PASS");
 }
 
-void test_resize_immediate() {
-    puts("== test_resize_immediate ==");
-    HMap map = {};
-
-    // Insert initial items
-    Item items[5];
-    const char* keys[] = {"one", "two", "three", "four", "five"};
-
-    for (int i = 0; i < 5; i++) {
-        items[i]            = (Item){.key = keys[i], .value = i};
-        items[i].node.hcode = hm_strhash(items[i].key);
-        hm_insert(&map, &items[i].node);
-    }
-
-    // Resize
-    hm_resize_immediate(&map, 64);
-
-    // Test operations after resize
-
-    // 1. Lookup existing
-    Item probe   = {.key = "three", .node = {.hcode = hm_strhash("three")}};
-    HNode* found = hm_lookup(&map, &probe.node, item_eq);
-    assert(found && container_of(found, Item, node)->value == 2);
-
-    // 2. Delete existing
-    HNode* deleted = hm_delete(&map, &probe.node, item_eq);
-    assert(deleted);
-    assert(hm_size(&map) == 4);
-
-    // 3. Insert new
-    Item new_item       = {.key = "six", .value = 6};
-    new_item.node.hcode = hm_strhash(new_item.key);
-    hm_insert(&map, &new_item.node);
-    assert(hm_size(&map) == 5);
-
-    // 4. Verify new item findable
-    Item new_probe = {.key = "six", .node = {.hcode = hm_strhash("six")}};
-    found          = hm_lookup(&map, &new_probe.node, item_eq);
-    assert(found && container_of(found, Item, node)->value == 6);
-
-    hm_clear(&map);
-    puts("PASS");
-}
-
 int main() {
     test_insert_and_lookup();
     test_deletion();
@@ -432,7 +388,6 @@ int main() {
     test_resize_during_rehashing();
     test_resize_empty_map();
     test_resize_with_collisions();
-    test_resize_immediate();
 
     puts("\nAll tests passed.");
     return 0;
