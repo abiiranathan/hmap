@@ -52,7 +52,7 @@ In your `CMakeLists.txt`, add
 ```txt
 add_add_subdirectory(hmap)
 
-target_link_libraries(your_lib/executable PRIVATE hmap::hmap)
+target_link_libraries(your_lib/executable PRIVATE hmap)
 ```
 
 3. Clone the repository and install the library system-wide.
