@@ -25,77 +25,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-/*
- * HashMap Library for C
- * ======================
- *
- * This is a minimal and efficient hashmap implementation in C that supports:
- *  - Insertions, lookups, and deletions in amortized O(1) time
- *  - Automatic resizing with incremental rehashing (no large pauses)
- *  - Separate chaining using linked lists
- *  - Generic key-value support via embedded HNode and custom equality/hashing
- *
- * Data Structures:
- * ----------------
- *  - HNode:      Embedded in your struct to link into the hashmap
- *  - HTab:       Internal hash table used by the HMap
- *  - HMap:       Public-facing dynamic hashmap structure
- *
- * Usage:
- * ------
- * 1. Define your key-value struct with `HNode node;` as a field:
- *
- *     typedef struct {
- *         HNode node;
- *         const char* key;
- *         int value;
- *     } Item;
- *
- * 2. Define a comparison function:
- *
- *     bool item_eq(HNode* a, HNode* b) {
- *         Item* ia = container_of(a, Item, node);
- *         Item* ib = container_of(b, Item, node);
- *         return strcmp(ia->key, ib->key) == 0;
- *     }
- *
- * 3. Hash your key using any suitable hash function (e.g., FNV-1a).
- *
- * 4. Insert, lookup, or delete:
- *
- *     HMap map = {};
- *     Item item = { .key = "example", .value = 42 };
- *     item.node.hcode = str_hash(item.key);
- *     hm_insert(&map, &item.node);
- *
- *     // Lookup
- *     Item key_item = { .key = "example", .node.hcode = str_hash("example") };
- *     HNode* found = hm_lookup(&map, &key_item.node, item_eq);
- *     if (found) {
- *         Item* result = container_of(found, Item, node);
- *         printf("%s => %d\n", result->key, result->value);
- *     }
- *
- *     // Delete
- *     HNode* removed = hm_delete(&map, &key_item.node, item_eq);
- *
- *     // Clean up
- *     hm_clear(&map);
- *
- * Notes:
- * ------
- *  - This hashmap implementation is not thread-safe.
- *  - Designed for high performance and minimal memory allocation.
- *  - Uses power-of-two bucket sizing for fast masking instead of modulo.
- *  - Automatic resizing is triggered when the load factor exceeds 8.
- *
- */
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-// Macro to get containing structure from member pointer
+// Macro to get containing structure from member pointer.
+// This is expected to be used with HNode pointers.
 #define container_of(ptr, type, member) ((type*)((char*)(ptr) - offsetof(type, member)))
 
 // Hash table node that should be embedded into payload structures
