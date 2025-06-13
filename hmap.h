@@ -79,6 +79,9 @@ typedef struct HMap {
     size_t migrate_pos;  // Next position to migrate from older table
 } HMap;
 
+// Initialize map with this given capacity.
+void hm_init(HMap* hmap, size_t capacity);
+
 // Find a node in the hash map.
 HNode* hm_lookup(HMap* hmap, HNode* key, bool (*eq)(HNode*, HNode*));
 
@@ -93,14 +96,6 @@ void hm_clear(HMap* hmap);
 
 // Returns the number of elements in the hash map.
 size_t hm_size(HMap* hmap);
-
-// Non-blocking resize that leverages existing progressive rehashing
-// new_capacity must be a power of 2.
-void hm_resize(HMap* hmap, size_t new_capacity);
-
-// Initialize map with this given capacity(must be power of two)
-// Must be called after initialization of map (before inserting any items.)
-void hm_reserve(HMap* hmap, size_t capacity);
 
 // ForEach macro
 // node is the loop variable of type HNode*

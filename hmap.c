@@ -28,8 +28,7 @@ SOFTWARE.
 #include "hmap.h"
 
 // Initialize a hash table with given size, n (should be power of 2)
-static void hm_init(HTab* htab, size_t n) {
-
+static void hm_table_init(HTab* htab, size_t n) {
     // If n is not a power of 2, round up to next power of 2.
     if (n > 0 && ((n - 1) & n) != 0) {
         n = NEXT_POWER_OF_TWO(n);  // Verify power of 2
@@ -107,9 +106,9 @@ static void hm_help_rehashing(HMap* hmap) {
 static void hm_trigger_rehashing(HMap* hmap) {
     assert(!hmap->older.tab);  // Shouldn't be rehashing already
 
-    hmap->older = hmap->newer;                          // Current table becomes older
-    hm_init(&hmap->newer, (hmap->newer.mask + 1) * 2);  // Double size
-    hmap->migrate_pos = 0;                              // Start migrating from slot 0
+    hmap->older = hmap->newer;                                // Current table becomes older
+    hm_table_init(&hmap->newer, (hmap->newer.mask + 1) * 2);  // Double size
+    hmap->migrate_pos = 0;                                    // Start migrating from slot 0
 }
 
 // Find a node in the hash map
@@ -132,7 +131,7 @@ const size_t k_max_load_factor = 8;
 // Insert a node into the hash map
 void hm_insert(HMap* hmap, HNode* node) {
     if (!hmap->newer.tab) {
-        hm_init(&hmap->newer, 4);  // Initial size 4 if empty
+        hm_table_init(&hmap->newer, 4);  // Initial size 4 if empty
     }
 
     h_insert(&hmap->newer, node);  // Always insert to newer table
@@ -205,22 +204,15 @@ void hm_resize(HMap* hmap, size_t new_capacity) {
     }
 
     // Trigger progressive rehashing to new size
-    hmap->older = hmap->newer;            // Current becomes older
-    hm_init(&hmap->newer, new_capacity);  // Create new table
-    hmap->migrate_pos = 0;                // Start migration
+    hmap->older = hmap->newer;                  // Current becomes older
+    hm_table_init(&hmap->newer, new_capacity);  // Create new table
+    hmap->migrate_pos = 0;                      // Start migration
 
     // Do some initial migration work (optional - keeps it non-blocking)
     hm_help_rehashing(hmap);
 }
 
-// Initialize map with this given capacity. It the capacity is
-// not a power of 2, the next power of 2 is used. e.g If capacity is 100
-// 128 will be used. You can use the helper NEXT_POWER_OF_TWO macro.
-//
-// Must be called after initialization of map (before inserting any items.)
-void hm_reserve(HMap* hmap, size_t capacity) {
-    if (!hmap->newer.tab) {
-        // power of 2 checked by the init function.
-        hm_init(&hmap->newer, capacity);
-    }
+// Initialize map with this given capacity.
+void hm_init(HMap* hmap, size_t capacity) {
+    hm_table_init(&hmap->newer, capacity);
 }
