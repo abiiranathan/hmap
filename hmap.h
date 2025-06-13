@@ -33,11 +33,10 @@ SOFTWARE.
 // This is expected to be used with HNode pointers.
 #define container_of(ptr, type, member) ((type*)((char*)(ptr) - offsetof(type, member)))
 
-#define NEXT_POWER_OF_TWO(n)                                                                                 \
-    ((n) == 0 ? 1                                                                                            \
-              : (((size_t)(n) - 1) | (((size_t)(n) - 1) >> 1) | (((size_t)(n) - 1) >> 2) |                   \
-                 (((size_t)(n) - 1) >> 4) | (((size_t)(n) - 1) >> 8) | (((size_t)(n) - 1) >> 16) |           \
-                 (((size_t)(n) - 1) >> 32)) +                                                                \
+#define NEXT_POWER_OF_TWO(n)                                                                                           \
+    ((n) == 0 ? 1                                                                                                      \
+              : (((size_t)(n) - 1) | (((size_t)(n) - 1) >> 1) | (((size_t)(n) - 1) >> 2) | (((size_t)(n) - 1) >> 4) |  \
+                 (((size_t)(n) - 1) >> 8) | (((size_t)(n) - 1) >> 16) | (((size_t)(n) - 1) >> 32)) +                   \
                     1)
 
 // // Helper function to find next power of two from n.
@@ -103,11 +102,11 @@ size_t hm_size(HMap* hmap);
 // newer table first (__phase == 0)
 // then older table  (__phase == 1)
 // t ensures __tab->tab is non-NULL and __i is within bounds (<= mask)
-#define hm_foreach(hmap_ptr, node)                                                                           \
-    for (int __phase = 0; __phase < 2; __phase++)                                                            \
-        for (HTab* __tab = (__phase == 0 ? &(hmap_ptr)->newer : &(hmap_ptr)->older); __tab && __tab->tab;    \
-             __tab       = NULL)                                                                             \
-            for (size_t __i = 0; __i <= __tab->mask; __i++)                                            \
+#define hm_foreach(hmap_ptr, node)                                                                                     \
+    for (int __phase = 0; __phase < 2; __phase++)                                                                      \
+        for (HTab* __tab = (__phase == 0 ? &(hmap_ptr)->newer : &(hmap_ptr)->older); __tab && __tab->tab;              \
+             __tab       = NULL)                                                                                       \
+            for (size_t __i = 0; __i <= __tab->mask; __i++)                                                      \
                 for (HNode* node = __tab->tab[__i]; node != NULL; node = node->next)
 
 // --------------------------------------------------------------------------------
