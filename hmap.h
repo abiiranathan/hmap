@@ -33,11 +33,11 @@ SOFTWARE.
 // This is expected to be used with HNode pointers.
 #define container_of(ptr, type, member) ((type*)((char*)(ptr) - offsetof(type, member)))
 
-#define NEXT_POWER_OF_TWO(n)                                                                                 \
-    ((n) == 0 ? 1                                                                                            \
-              : (((size_t)(n) - 1) | (((size_t)(n) - 1) >> 1) | (((size_t)(n) - 1) >> 2) |                   \
-                 (((size_t)(n) - 1) >> 4) | (((size_t)(n) - 1) >> 8) | (((size_t)(n) - 1) >> 16) |           \
-                 (((size_t)(n) - 1) >> 32)) +                                                                \
+#define NEXT_POWER_OF_TWO(n)                                                                       \
+    ((n) == 0 ? 1                                                                                  \
+              : (((size_t)(n) - 1) | (((size_t)(n) - 1) >> 1) | (((size_t)(n) - 1) >> 2) |         \
+                 (((size_t)(n) - 1) >> 4) | (((size_t)(n) - 1) >> 8) | (((size_t)(n) - 1) >> 16) | \
+                 (((size_t)(n) - 1) >> 32)) +                                                      \
                     1)
 
 // // Helper function to find next power of two from n.
@@ -77,16 +77,17 @@ typedef struct HMap {
     HTab newer;          // Active table (new inserts go here)
     HTab older;          // Table being migrated from
     size_t migrate_pos;  // Next position to migrate from older table
+    uint32_t magic;      // Initialization sentinel (HMAP_MAGIC)
 } HMap;
 
 // Initialize map with this given capacity.
-void hm_init(HMap* hmap, size_t capacity);
+bool hm_init(HMap* hmap, size_t capacity);
 
 // Find a node in the hash map.
 HNode* hm_lookup(HMap* hmap, HNode* key, bool (*eq)(HNode*, HNode*));
 
 // Insert a node into the hash map
-void hm_insert(HMap* hmap, HNode* node);
+bool hm_insert(HMap* hmap, HNode* node);
 
 // Remove a node from the hash map.
 HNode* hm_delete(HMap* hmap, HNode* key, bool (*eq)(HNode*, HNode*));
@@ -95,7 +96,7 @@ HNode* hm_delete(HMap* hmap, HNode* key, bool (*eq)(HNode*, HNode*));
 void hm_clear(HMap* hmap);
 
 // Returns the number of elements in the hash map.
-size_t hm_size(HMap* hmap);
+size_t hm_size(const HMap* hmap);
 
 // ForEach macro
 // node is the loop variable of type HNode*
@@ -103,11 +104,11 @@ size_t hm_size(HMap* hmap);
 // newer table first (__phase == 0)
 // then older table  (__phase == 1)
 // t ensures __tab->tab is non-NULL and __i is within bounds (<= mask)
-#define hm_foreach(hmap_ptr, node)                                                                           \
-    for (int __phase = 0; __phase < 2; __phase++)                                                            \
-        for (HTab* __tab = (__phase == 0 ? &(hmap_ptr)->newer : &(hmap_ptr)->older); __tab && __tab->tab;    \
-             __tab       = NULL)                                                                             \
-            for (size_t __i = 0; __i <= __tab->mask; __i++)                                            \
+#define hm_foreach(hmap_ptr, node)                                                                  \
+    for (int __phase = 0; __phase < 2; __phase++)                                                   \
+        for (HTab* __tab                = (__phase == 0 ? &(hmap_ptr)->newer : &(hmap_ptr)->older); \
+             __tab && __tab->tab; __tab = NULL)                                                     \
+            for (size_t __i = 0; __i <= __tab->mask; __i++)                                         \
                 for (HNode* node = __tab->tab[__i]; node != NULL; node = node->next)
 
 // --------------------------------------------------------------------------------
