@@ -1,46 +1,5 @@
 #ifndef HASH_H
 #define HASH_H
-/*
-Usage:
-
-#include <stdio.h>
-#include <string.h>
-
-void print_hash_32(const char* str) {
-    uint32_t hash = MurmurHash3_x86_32(str, strlen(str), 0);
-    printf("MurmurHash3_32(\"%s\") = 0x%08x\n", str, hash);
-}
-
-void print_hash_128_x86(const char* str) {
-    uint32_t hash[4];
-    MurmurHash3_x86_128(str, strlen(str), 0, hash);
-    printf("MurmurHash3_x86_128(\"%s\") = 0x%08x%08x%08x%08x\n", str, hash[0], hash[1], hash[2],
-hash[3]);
-}
-
-void print_hash_128_x64(const char* str) {
-    uint64_t hash[2];
-    MurmurHash3_x64_128(str, strlen(str), 0, hash);
-    printf("MurmurHash3_x64_128(\"%s\") = 0x%016lx%016lx\n", str, hash[0], hash[1]);
-}
-
-int main() {
-    const char* test_strings[] = {"", "a", "hello", "hello world",
-                                  "The quick brown fox jumps over the lazy dog"};
-
-    int num_tests = sizeof(test_strings) / sizeof(test_strings[0]);
-
-    for (int i = 0; i < num_tests; i++) {
-        print_hash_32(test_strings[i]);
-        print_hash_128_x86(test_strings[i]);
-        print_hash_128_x64(test_strings[i]);
-        printf("\n");
-    }
-
-    return 0;
-}
-
-*/
 
 #include <endian.h>  // glibc endian support
 #include <stddef.h>  // type definitions
